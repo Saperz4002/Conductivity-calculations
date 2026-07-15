@@ -1,3 +1,41 @@
+"""
+Constant-energy spin textures of pure Rashba and altermagnetic models
+====================================================================
+
+Overview
+--------
+This script calculates constant-energy contours in the two-dimensional
+momentum plane and overlays the corresponding spin texture for two limiting
+cases of a Rashba-altermagnetic Hamiltonian.
+
+For every energy listed in ``E0_list``, the script generates one figure for
+the pure Rashba model and one for the pure d_xy altermagnetic model.
+
+Available modes
+---------------
+1. ``"rashba"``
+   Uses the dispersion
+
+       E_±(k) = t0 (kx² + ky²) ± alpha sqrt(kx² + ky²).
+
+   The spin lies in the momentum plane and is represented by black arrows
+   tangent to the constant-energy contours. The two bands have opposite
+   Rashba helicities.
+
+2. ``"am"``
+   Uses the dispersion
+
+       E_±(k) = t0 (kx² + ky²) ± 2 tj kx ky.
+
+   The spin points perpendicular to the momentum plane. A dot represents
+   spin along +z, while a cross represents spin along -z.
+
+Outputs
+-------
+Each figure is displayed and saved in both high-resolution PNG and vector
+PDF formats inside the directory specified by ``output_dir``.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os
