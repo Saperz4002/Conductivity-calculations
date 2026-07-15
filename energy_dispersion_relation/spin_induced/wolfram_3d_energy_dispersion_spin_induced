@@ -1,0 +1,161 @@
+
+(*
+3D spin-biased energy bands of the Rashba--altermagnetic model
+==============================================================
+
+Overview
+--------
+This Wolfram Language script plots the upper and lower energy bands of a
+two-dimensional continuum model with quadratic dispersion, Rashba spin-orbit
+coupling, an altermagnetic term, and an out-of-plane spin bias b_z.
+
+The spin-dependent splitting is
+
+    d_b(kx, ky, b_z) =
+        Sqrt[
+            alpha^2 (kx^2 + ky^2)
+            + (2 tj kx ky - b_z)^2
+        ],
+
+and the two bands are
+
+    E_±(kx, ky, b_z) =
+        t0 (kx^2 + ky^2) ± d_b(kx, ky, b_z).
+
+The surfaces are plotted only inside the circular momentum region
+
+    kx^2 + ky^2 <= kmax^2,
+
+so the displayed domain is a disk of radius kmax.
+
+Available modes
+---------------
+Set plotMode to one of the following:
+
+1. "plain"
+   Draws the two band surfaces with semi-transparent colors and no energy mesh.
+
+2. "mesh"
+   Draws the same semi-transparent surfaces, but overlays constant-energy mesh
+   lines on each band.
+
+Output
+------
+The script returns one combined 3D visualization created with Show[...] in which:
+
+- the upper band E_+ is shown in red,
+- the lower band E_- is shown in blue.
+
+The final viewing angle, box ratios, and background are controlled in the
+last Show[...] block.
+*)
+
+ClearAll["Global`*"]
+
+(* ===================================================== *)
+(* Plot mode                                             *)
+(* ===================================================== *)
+(* Options: "plain" or "mesh" *)
+plotMode = "mesh";
+
+(* ===================================================== *)
+(* Parameters                                            *)
+(* ===================================================== *)
+t0 = 0.761;
+tj = 0.6*t0;
+alpha = 0.05;
+kmax = 0.50;
+
+bzmeV = 10;
+bz = bzmeV*10^-3;   (* eV *)
+
+plotPoints = 90;
+maxRecursion = 2;
+meshCount = 12;
+
+axesLabels = {
+   Style[Subscript["k", "x"] <> " (nm^-1)", 14],
+   Style[Subscript["k", "y"] <> " (nm^-1)", 14],
+   Style["\[Epsilon] (eV)", 14]
+};
+
+(* ===================================================== *)
+(* Biased bands                                          *)
+(* d_z = 2 t_j k_x k_y - b_z                            *)
+(* ===================================================== *)
+dBias[kx_, ky_, bz_] :=
+  Sqrt[alpha^2 (kx^2 + ky^2) + (2 tj kx ky - bz)^2];
+
+Eplus[kx_, ky_, bz_] :=
+  t0 (kx^2 + ky^2) + dBias[kx, ky, bz];
+
+Eminus[kx_, ky_, bz_] :=
+  t0 (kx^2 + ky^2) - dBias[kx, ky, bz];
+
+diskRegion = Function[{kx, ky, z}, kx^2 + ky^2 <= kmax^2];
+
+(* ===================================================== *)
+(* Helper function for band surfaces                     *)
+(* ===================================================== *)
+makeBandPlot[bandFunc_, baseColor_, meshColor_, mode_] :=
+  Module[{commonOptions, styleOptions},
+
+   commonOptions = {
+     {kx, -kmax, kmax},
+     {ky, -kmax, kmax},
+     RegionFunction -> diskRegion,
+     PlotPoints -> plotPoints,
+     MaxRecursion -> maxRecursion,
+     AxesLabel -> axesLabels,
+     PlotRange -> All,
+     BoundaryStyle -> None,
+     Lighting -> "Neutral"
+   };
+
+   styleOptions =
+    Switch[mode,
+     "plain",
+     {
+      PlotStyle -> Directive[baseColor, Opacity[0.35]],
+      Mesh -> None
+     },
+
+     "mesh",
+     {
+      PlotStyle -> Directive[baseColor, Opacity[0.35]],
+      MeshFunctions -> {#3 &},
+      Mesh -> meshCount,
+      MeshStyle -> Directive[meshColor, Thick]
+     },
+
+     _,
+     (
+      Print["Unknown plotMode. Use \"plain\" or \"mesh\"."];
+      Abort[]
+     )
+    ];
+
+   Plot3D[
+    Evaluate[bandFunc[kx, ky, bz]],
+    Evaluate[Sequence @@ commonOptions],
+    Evaluate[Sequence @@ styleOptions]
+   ]
+  ];
+
+(* ===================================================== *)
+(* Build the two band surfaces                           *)
+(* ===================================================== *)
+p1 = makeBandPlot[Eplus, Red, Darker[Red], plotMode];
+p2 = makeBandPlot[Eminus, Blue, Darker[Blue], plotMode];
+
+(* ===================================================== *)
+(* Final figure                                          *)
+(* ===================================================== *)
+Show[
+ p1, p2,
+ BoxRatios -> {1, 1, 0.7},
+ ImageSize -> Large,
+ PlotRange -> All,
+ ViewPoint -> {1.8, -2.2, 1.3},
+ Background -> White
+]
